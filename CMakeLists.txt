@@ -754,22 +754,31 @@ set_glob(DATA GLOB_RECURSE "json;map;png;rules;ttf;txt;wv" datasrc
   languages/belarusian.json
   languages/bosnian.json
   languages/brazilian_portuguese.json
+  languages/breton.json
   languages/bulgarian.json
+  languages/catalan.json
   languages/chuvash.json
+  languages/chinese.json
   languages/czech.json
+  languages/esperanto.json
+  languages/estonian.json
   languages/danish.json
   languages/dutch.json
   languages/finnish.json
   languages/french.json
   languages/gaelic_scottish.json
+  languages/galician.json
   languages/german.json
   languages/greek.json
   languages/hungarian.json
   languages/index.json
   languages/italian.json
+  languages/irish.json
   languages/japanese.json
   languages/korean.json
   languages/kyrgyz.json
+  languages/lithuanian.json
+  languages/slovenian.json
   languages/license.txt
   languages/norwegian.json
   languages/polish.json
@@ -832,7 +841,7 @@ set_glob(DATA GLOB_RECURSE "json;map;png;rules;ttf;txt;wv" datasrc
   maps/dm9.map
   maps/license.txt
   maps/readme.txt
-  maps/sur1.map
+  maps/lms1.map
   particles.png
   skins/bluekitty.json
   skins/bluestripe.json
