@@ -160,6 +160,7 @@ function GenerateMacOSXSettings(settings, conf, arch, compiler)
 	settings.link.frameworks:Add("AGL")
 	-- FIXME: the SDL config is applied in BuildClient too but is needed here before so the launcher will compile
 	config.sdl:Apply(settings)
+	settings.link.extrafiles:Merge(Compile(settings, "src/osxlaunch/client.m"))
 	BuildClient(settings)
 
 	-- Content
@@ -168,6 +169,7 @@ end
 
 function GenerateLinuxSettings(settings, conf, arch, compiler)
 	if arch == "x86" then
+		settings.cc.flags:Add("-msse2") -- for the _mm_pause call
 		settings.cc.flags:Add("-m32")
 		settings.link.flags:Add("-m32")
 	elseif arch == "x86_64" then

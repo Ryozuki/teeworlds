@@ -120,7 +120,10 @@ void CChat::ConChat(IConsole::IResult *pResult, void *pUserData)
 			}
 		}
 		if(Target < 0 || Target >= MAX_CLIENTS || !pChat->m_pClient->m_aClients[Target].m_Active || pChat->m_pClient->m_LocalClientID == Target)
-			pChat->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "console", "please enter a valid ClientID");
+		{
+			if(pResult->NumArguments() == 2)
+				pChat->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "console", "please enter a valid ClientID");
+		}
 		else
 		{
 			pChat->m_WhisperTarget = Target;
@@ -369,7 +372,7 @@ void CChat::OnMessage(int MsgType, void *pRawMsg)
 
 void CChat::AddLine(int ClientID, int Mode, const char *pLine, int TargetID)
 {
-	if(*pLine == 0 || (ClientID != -1 && (!g_Config.m_ClShowsocial || m_pClient->m_aClients[ClientID].m_aName[0] == '\0' || // unknown client
+	if(*pLine == 0 || (ClientID != -1 && (!g_Config.m_ClShowsocial || !m_pClient->m_aClients[ClientID].m_Active || // unknown client
 		m_pClient->m_aClients[ClientID].m_ChatIgnore ||
 		g_Config.m_ClFilterchat == 2 ||
 		(m_pClient->m_LocalClientID != ClientID && g_Config.m_ClFilterchat == 1 && !m_pClient->m_aClients[ClientID].m_Friend))))
