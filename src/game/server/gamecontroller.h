@@ -14,6 +14,7 @@
 */
 class IGameController
 {
+protected:
 	class CGameContext *m_pGameServer;
 	class IServer *m_pServer;
 
@@ -91,7 +92,6 @@ class IGameController
 	// team
 	int ClampTeam(int Team) const;
 
-protected:
 	CGameContext *GameServer() const { return m_pGameServer; }
 	IServer *Server() const { return m_pServer; }
 
@@ -163,6 +163,8 @@ public:
 	void OnPlayerDisconnect(class CPlayer *pPlayer);
 	void OnPlayerInfoChange(class CPlayer *pPlayer);
 	void OnPlayerReadyChange(class CPlayer *pPlayer);
+	virtual void OnCharacterTick(class CCharacter *pChr) {};
+	virtual void OnCharacterPostTick(class CCharacter *pChr) {};
 
 	void OnReset();
 

@@ -47,11 +47,15 @@ CCharacter::CCharacter(CGameWorld *pWorld)
 	m_Health = 0;
 	m_Armor = 0;
 	m_TriggeredEvents = 0;
+	m_FrozenUntil = 0;
+	m_WasLastTickFrozen = false;
 }
 
 void CCharacter::Reset()
 {
 	Destroy();
+	m_FrozenUntil = 0;
+	m_WasLastTickFrozen = false;
 }
 
 bool CCharacter::Spawn(CPlayer *pPlayer, vec2 Pos)
@@ -62,6 +66,7 @@ bool CCharacter::Spawn(CPlayer *pPlayer, vec2 Pos)
 	m_ActiveWeapon = WEAPON_GUN;
 	m_LastWeapon = WEAPON_HAMMER;
 	m_QueuedWeapon = -1;
+	m_FrozenUntil = 0;
 
 	m_pPlayer = pPlayer;
 	m_Pos = Pos;
@@ -116,6 +121,8 @@ bool CCharacter::IsGrounded()
 
 void CCharacter::HandleNinja()
 {
+	if(IsFrozen())
+		return;
 	if(m_ActiveWeapon != WEAPON_NINJA)
 		return;
 
@@ -251,6 +258,8 @@ void CCharacter::HandleWeaponSwitch()
 
 void CCharacter::FireWeapon()
 {
+	if(IsFrozen())
+		return;
 	if(m_ReloadTimer != 0)
 		return;
 
@@ -525,6 +534,7 @@ void CCharacter::ResetInput()
 
 void CCharacter::Tick()
 {
+	GameServer()->GameController()->OnCharacterTick(this);
 	m_Core.m_Input = m_Input;
 	m_Core.Tick(true);
 
@@ -540,6 +550,11 @@ void CCharacter::Tick()
 
 	// handle Weapons
 	HandleWeapons();
+
+	GameServer()->GameController()->OnCharacterPostTick(this);
+
+	if(IsFrozen())
+		m_WasLastTickFrozen = true;
 }
 
 void CCharacter::TickDefered()
@@ -824,4 +839,27 @@ void CCharacter::Snap(int SnappingClient)
 void CCharacter::PostSnap()
 {
 	m_TriggeredEvents = 0;
+}
+
+void CCharacter::Freeze(unsigned int seconds)
+{
+	if(seconds == 0)
+		return;
+	m_FrozenUntil = Server()->Tick() + seconds * Server()->TickSpeed();
+	m_LastWeapon = m_ActiveWeapon;
+	m_aWeapons[WEAPON_NINJA].m_Got = true;
+	SetWeapon(WEAPON_NINJA);
+}
+
+void CCharacter::UnFreeze()
+{
+	m_aWeapons[WEAPON_NINJA].m_Got = false;
+	if(m_ActiveWeapon == WEAPON_NINJA)
+		SetWeapon(m_LastWeapon);
+	m_FrozenUntil = 0;
+}
+
+bool CCharacter::IsFrozen()
+{
+	return GameServer()->Server()->Tick() < FrozenExpireTick();
 }

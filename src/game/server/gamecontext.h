@@ -83,6 +83,7 @@ public:
 	class CPlayer *m_apPlayers[MAX_CLIENTS];
 
 	class IGameController *m_pController;
+	class IGameController *GameController() { return m_pController; }
 	CGameWorld m_World;
 
 	// helper functions

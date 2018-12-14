@@ -29,6 +29,12 @@ public:
 
 	bool IsGrounded();
 
+	void Freeze(unsigned int seconds);
+	void UnFreeze();
+	bool IsFrozen();
+	bool WasLastTickFrozen() { return m_WasLastTickFrozen; }
+	int FrozenExpireTick() { return m_FrozenUntil; }
+
 	void SetWeapon(int W);
 	void HandleWeaponSwitch();
 	void DoWeaponSwitch();
@@ -58,11 +64,15 @@ public:
 	bool IsAlive() const { return m_Alive; }
 	class CPlayer *GetPlayer() { return m_pPlayer; }
 
+	CNetObj_PlayerInput m_Input;
+
 private:
 	// player controlling this character
 	class CPlayer *m_pPlayer;
 
 	bool m_Alive;
+	bool m_WasLastTickFrozen;
+	int m_FrozenUntil;
 
 	// weapon info
 	CEntity *m_apHitObjects[10];
@@ -95,7 +105,6 @@ private:
 	CNetObj_PlayerInput m_LatestInput;
 
 	// input
-	CNetObj_PlayerInput m_Input;
 	int m_NumInputs;
 	int m_Jumped;
 

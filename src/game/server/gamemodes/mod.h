@@ -9,8 +9,18 @@
 class CGameControllerMOD : public IGameController
 {
 public:
-	CGameControllerMOD(class CGameContext *pGameServer);
-	virtual void Tick();
+	explicit CGameControllerMOD(class CGameContext *pGameServer);
+
+	void Tick() override;
+
+
+
+	void OnCharacterSpawn(class CCharacter *pChr) override;
+
+	void OnCharacterTick(class CCharacter *pChr) override;
+
+	void OnCharacterPostTick(class CCharacter *pChr) override;
+
 	// add more virtual functions here if you wish
 };
 #endif
