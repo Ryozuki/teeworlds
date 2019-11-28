@@ -8,9 +8,17 @@
 // todo a modification with their base as well.
 class CGameControllerMOD : public IGameController
 {
+	struct sqlite3 *m_DB;
+
 public:
 	CGameControllerMOD(class CGameContext *pGameServer);
+	~CGameControllerMOD();
 	virtual void Tick();
+	void Print(const char *submodule, const char *buffer);
 	virtual int OnCharacterDeath(class CCharacter *pVictim, class CPlayer *pKiller, int Weapon);
+	virtual void OnPlayerConnect(class CPlayer *pPlayer);
+	virtual void OnPlayerDisconnect(class CPlayer *pPlayer);
+
+	struct sqlite3 *DB() { return m_DB; };
 };
 #endif
