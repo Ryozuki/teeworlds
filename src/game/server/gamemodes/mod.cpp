@@ -18,7 +18,7 @@ CGameControllerMOD::CGameControllerMOD(CGameContext *pGameServer)
 	m_GameFlags = GAMEFLAG_TEAMS; // GAMEFLAG_TEAMS makes it a two-team gamemode
 
 	int err;
-	
+
 	err = sqlite3_open(g_Config.m_SvDatabaseName, &m_DB);
 
 	if(err)
@@ -61,16 +61,19 @@ CGameControllerMOD::CGameControllerMOD(CGameContext *pGameServer)
 			"	FOREIGN KEY(Player) REFERENCES Player(ID),"
 			"	CONSTRAINT UK_PlayerMatch UNIQUE (Match, Player)"
 			");"
-			, 
+			,
 			NULL, 0, &errMsg);
 
 	if(err != SQLITE_OK) {
 		Print("database", "Error creating tables");
 		Print("database", errMsg);
-	} 
+	}
 	else {
 		Print("database", "Tables created succesfully");
 	}
+	char aBuf[32];
+	str_format(aBuf, sizeof(aBuf), "Username exists: %d", UsernameExists("Ryozuki"));
+	Print("test", aBuf);
 }
 
 CGameControllerMOD::~CGameControllerMOD() {
@@ -102,4 +105,26 @@ void CGameControllerMOD::OnPlayerConnect(CPlayer *pPlayer) {
 
 void CGameControllerMOD::OnPlayerDisconnect(CPlayer *pPlayer) {
 	IGameController::OnPlayerDisconnect(pPlayer);
+}
+
+bool CGameControllerMOD::UsernameExists(const char *Username)
+{
+	sqlite3_stmt *stmt;
+	sqlite3_prepare_v2(DB(),
+			"SELECT COUNT(*) FROM Player WHERE Username = ?;",
+			-1, &stmt, NULL);
+	sqlite3_bind_text(stmt, 1, Username, -1, SQLITE_TRANSIENT);
+
+	int code = sqlite3_step(stmt);
+
+
+	if(code != SQLITE_ROW || sqlite3_column_count(stmt) == 0) {
+		Print("database", "No rows returned when using COUNT(*).");
+		return false;
+	}
+
+	int count = sqlite3_column_int(stmt, 0);
+
+	sqlite3_finalize(stmt);
+	return count;
 }
