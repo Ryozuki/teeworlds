@@ -99,7 +99,7 @@ set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
   src/game/version.h
 )
 
-set(SERVER_EXECUTABLE teeworlds_srv CACHE STRING "Name of the built server executable")
+set(SERVER_EXECUTABLE dotw_sv CACHE STRING "Name of the built server executable")
 set(CLIENT_EXECUTABLE teeworlds CACHE STRING "Name of the build client executable")
 
 ########################################################################
@@ -316,6 +316,7 @@ find_package(Pnglite)
 find_package(SDL2)
 find_package(Threads)
 find_package(Wavpack)
+find_package(SQLite3)
 
 
 if(TARGET_OS AND TARGET_OS STREQUAL "mac")
@@ -1541,7 +1542,7 @@ else()
 endif()
 
 # Libraries
-set(LIBS_SERVER ${LIBS})
+set(LIBS_SERVER ${LIBS} ${SQLite3_LIBRARIES})
 
 # Target
 set(TARGET_SERVER ${SERVER_EXECUTABLE})
@@ -1553,6 +1554,7 @@ add_executable(${TARGET_SERVER}
   $<TARGET_OBJECTS:game-shared>
 )
 target_link_libraries(${TARGET_SERVER} ${LIBS_SERVER})
+target_include_directories(${TARGET_SERVER} PRIVATE ${SQLite3_INCLUDE_DIRS})
 list(APPEND TARGETS_OWN ${TARGET_SERVER})
 list(APPEND TARGETS_LINK ${TARGET_SERVER})
 

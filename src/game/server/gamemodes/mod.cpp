@@ -1,8 +1,11 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "mod.h"
+#include <game/server/entities/character.h>
+#include <game/server/gamecontext.h>
+#include <game/server/player.h>
 
-CGameControllerMOD::CGameControllerMOD(class CGameContext *pGameServer)
+CGameControllerMOD::CGameControllerMOD(CGameContext *pGameServer)
 : IGameController(pGameServer)
 {
 	// Exchange this to a string that identifies your game mode.
@@ -17,4 +20,10 @@ void CGameControllerMOD::Tick()
 	// this is the main part of the gamemode, this function is run every tick
 
 	IGameController::Tick();
+}
+
+int CGameControllerMOD::OnCharacterDeath(CCharacter *pVictim, CPlayer *pKiller, int Weapon)
+{
+	IGameController::OnCharacterDeath(pVictim, pKiller, Weapon);
+	return 0;
 }
