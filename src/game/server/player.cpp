@@ -468,5 +468,9 @@ void CPlayer::TryRespawn()
 	m_Spawning = false;
 	m_pCharacter = new(m_ClientID) CCharacter(&GameServer()->m_World);
 	m_pCharacter->Spawn(this, SpawnPos);
+	m_pCharacter->SetMaxMana(10);
+	m_pCharacter->SetMana(10);
+	m_pCharacter->SetMaxLife(10);
+	m_pCharacter->SetLife(10);
 	GameServer()->CreatePlayerSpawn(SpawnPos);
 }

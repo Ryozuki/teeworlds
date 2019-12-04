@@ -3,22 +3,30 @@
 #ifndef GAME_SERVER_ENTITIES_LIFE_INDICATOR_H
 #define GAME_SERVER_ENTITIES_LIFE_INDICATOR_H
 
-class CLifeIndicator : public CEntity
+#define VALUE_MARGIN 10
+
+enum ValueBarType {
+	VALUE_BAR_HP,
+	VALUE_BAR_MANA
+} ;
+
+class CValueBar : public CEntity
 {
 public:
-	CLifeIndicator(CGameWorld *pGameWorld, int Owner, int MaxLife);
-
-	int GetOwner() const { return m_Owner; }
+	CValueBar(CGameWorld *pGameWorld, int Owner, ValueBarType Type, int MaxValue);
+	~CValueBar();
 
 	virtual void Reset();
 	virtual void Tick();
-	virtual void TickDefered();
 	virtual void Snap(int SnappingClient);
+	void SetValue(int Value);
+	void SetMaxValue(int MaxValue);
 
 private:
-	int m_Owner;
-	int m_Life;
-	int m_MaxLife;
+	CCharacter *m_pOwner;
+	int m_Type;
+	int m_Value;
+	int m_MaxValue;
 	bool m_Shown;
 	int *m_IDS;
 };

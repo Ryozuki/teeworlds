@@ -1490,19 +1490,7 @@ void CGameContext::OnInit()
 	m_Layers.Init(Kernel());
 	m_Collision.Init(&m_Layers);
 
-	// select gametype
-	if(str_comp_nocase(g_Config.m_SvGametype, "mod") == 0)
-		m_pController = new CGameControllerMOD(this);
-	else if(str_comp_nocase(g_Config.m_SvGametype, "ctf") == 0)
-		m_pController = new CGameControllerCTF(this);
-	else if(str_comp_nocase(g_Config.m_SvGametype, "lms") == 0)
-		m_pController = new CGameControllerLMS(this);
-	else if(str_comp_nocase(g_Config.m_SvGametype, "lts") == 0)
-		m_pController = new CGameControllerLTS(this);
-	else if(str_comp_nocase(g_Config.m_SvGametype, "tdm") == 0)
-		m_pController = new CGameControllerTDM(this);
-	else
-		m_pController = new CGameControllerDM(this);
+	m_pController = new CGameControllerMOD(this);
 
 	// create all entities from the game layer
 	CMapItemLayerTilemap *pTileMap = m_Layers.GameLayer();

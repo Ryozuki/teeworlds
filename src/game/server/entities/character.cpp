@@ -10,7 +10,7 @@
 #include "character.h"
 #include "laser.h"
 #include "projectile.h"
-#include "life_indicator.h"
+#include "value_bar.h"
 
 //input count
 struct CInputCount
@@ -48,7 +48,8 @@ CCharacter::CCharacter(CGameWorld *pWorld)
 	m_Health = 0;
 	m_Armor = 0;
 	m_TriggeredEvents = 0;
-	m_MaxLife = 5;
+	m_MaxHP = 3;
+	m_MaxMana = 3;
 }
 
 void CCharacter::Reset()
@@ -80,7 +81,11 @@ bool CCharacter::Spawn(CPlayer *pPlayer, vec2 Pos)
 	GameWorld()->InsertEntity(this);
 	m_Alive = true;
 
-	m_LifeIndicator = new CLifeIndicator(GameWorld(), GetPlayer()->GetCID(), m_MaxLife);
+	m_CurrentHP = m_MaxHP;
+	m_CurrentMana = m_MaxMana;
+
+	m_ManaBar = new CValueBar(GameWorld(), GetPlayer()->GetCID(), VALUE_BAR_MANA, m_MaxMana);
+	m_LifeBar = new CValueBar(GameWorld(), GetPlayer()->GetCID(), VALUE_BAR_HP, m_MaxHP);
 
 	GameServer()->m_pController->OnCharacterSpawn(this);
 
@@ -869,4 +874,28 @@ void CCharacter::Snap(int SnappingClient)
 void CCharacter::PostSnap()
 {
 	m_TriggeredEvents = 0;
+}
+
+void CCharacter::SetMaxLife(int MaxLife)
+{
+	if(m_LifeBar)
+		m_LifeBar->SetMaxValue(MaxLife);
+}
+
+void CCharacter::SetLife(int Life)
+{
+	if(m_LifeBar)
+		m_LifeBar->SetValue(Life);
+}
+
+void CCharacter::SetMaxMana(int MaxMana)
+{
+	if(m_ManaBar)
+		m_ManaBar->SetMaxValue(MaxMana);
+}
+
+void CCharacter::SetMana(int Mana)
+{
+	if(m_ManaBar)
+		m_ManaBar->SetValue(Mana);
 }

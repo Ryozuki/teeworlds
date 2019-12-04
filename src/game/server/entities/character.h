@@ -63,6 +63,13 @@ public:
 	bool IsAlive() const { return m_Alive; }
 	class CPlayer *GetPlayer() { return m_pPlayer; }
 
+	// DotW
+	
+	void SetMaxLife(int MaxLife);
+	void SetLife(int Life);
+	void SetMaxMana(int MaxMana);
+	void SetMana(int Mana);
+
 private:
 	// player controlling this character
 	class CPlayer *m_pPlayer;
@@ -128,8 +135,12 @@ private:
 
 	// DotW code
 	
-	class CLifeIndicator *m_LifeIndicator;
-	int m_MaxLife;
+	class CValueBar *m_LifeBar;
+	class CValueBar *m_ManaBar;
+	int m_MaxHP;
+	int m_MaxMana;
+	int m_CurrentHP;
+	int m_CurrentMana;
 
 };
 

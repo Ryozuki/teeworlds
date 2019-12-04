@@ -130,6 +130,12 @@ private:
 	int m_SpectatorID;
 	class CFlag *m_pSpecFlag;
 	bool m_ActiveSpecSwitch;
+
+	// DotW
+	
+	int m_Level;
+	int m_MaxHP;
+	int m_MaxMana;
 };
 
 #endif
