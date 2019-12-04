@@ -126,6 +126,11 @@ private:
 	CCharacterCore m_SendCore; // core that we should send
 	CCharacterCore m_ReckoningCore; // the dead reckoning core
 
+	// DotW code
+	
+	class CLifeIndicator *m_LifeIndicator;
+	int m_MaxLife;
+
 };
 
 #endif

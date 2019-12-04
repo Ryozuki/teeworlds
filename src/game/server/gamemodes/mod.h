@@ -20,7 +20,7 @@ public:
 	virtual void OnPlayerDisconnect(class CPlayer *pPlayer);
 
 	bool UsernameExists(const char *Username);
-	bool RegisterPlayer(class CPlayer *pPlayer, const char *Username, const char *Password);
+	bool RegisterPlayer(const char *Username, const char *Password);
 
 	struct sqlite3 *DB() { return m_DB; };
 };

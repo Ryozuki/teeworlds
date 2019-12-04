@@ -37,7 +37,7 @@ CGameControllerMOD::CGameControllerMOD(CGameContext *pGameServer)
 
 	err = sqlite3_exec(m_DB,
 			"CREATE TABLE IF NOT EXISTS Player ("
-			"	ID INT PRIMARY KEY NOT NULL,"
+			"	ID INTEGER PRIMARY KEY AUTOINCREMENT,"
 			"	Username TEXT NOT NULL,"
 			"	Password TEXT NOT NULL,"
 			"	MMR INT NOT NULL DEFAULT 0,"
@@ -45,7 +45,7 @@ CGameControllerMOD::CGameControllerMOD(CGameContext *pGameServer)
 			"	CONSTRAINT UK_Username UNIQUE (Username)"
 			");"
 			"CREATE TABLE IF NOT EXISTS Match ("
-			"	ID INT PRIMARY KEY NOT NULL,"
+			"	ID INTEGER PRIMARY KEY AUTOINCREMENT,"
 			"	TeamWin INT NOT NULL,"
 			"	ScoreTeam1 INT NOT NULL,"
 			"	ScoreTeam2 INT NOT NULL,"
@@ -53,8 +53,8 @@ CGameControllerMOD::CGameControllerMOD(CGameContext *pGameServer)
 			"	Timestamp DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL"
 			");"
 			"CREATE TABLE IF NOT EXISTS PlayerMatch ("
-			"	Match INT NOT NULL,"
-			"	Player INT NOT NULL,"
+			"	Match INTEGER NOT NULL,"
+			"	Player INTEGER NOT NULL,"
 			"	Kills INT NOT NULL,"
 			"	Deaths INT NOT NULL,"
 			"	FOREIGN KEY(Match) REFERENCES Match(ID),"
@@ -65,15 +65,13 @@ CGameControllerMOD::CGameControllerMOD(CGameContext *pGameServer)
 			NULL, 0, &errMsg);
 
 	if(err != SQLITE_OK) {
-		Print("database", "Error creating tables");
-		Print("database", errMsg);
+		dbg_msg("database", "error creating tables: %s", errMsg);
 	}
 	else {
-		Print("database", "Tables created succesfully");
+		dbg_msg("database", "tables created succesfully.");
 	}
-	char aBuf[32];
-	str_format(aBuf, sizeof(aBuf), "Username exists: %d", UsernameExists("Ryozuki"));
-	Print("test", aBuf);
+
+	RegisterPlayer("Ryozuki", "test");
 }
 
 CGameControllerMOD::~CGameControllerMOD() {
@@ -109,22 +107,45 @@ void CGameControllerMOD::OnPlayerDisconnect(CPlayer *pPlayer) {
 
 bool CGameControllerMOD::UsernameExists(const char *Username)
 {
-	sqlite3_stmt *stmt;
+	sqlite3_stmt *pStmt;
 	sqlite3_prepare_v2(DB(),
 			"SELECT COUNT(*) FROM Player WHERE Username = ?;",
-			-1, &stmt, NULL);
-	sqlite3_bind_text(stmt, 1, Username, -1, SQLITE_TRANSIENT);
+			-1, &pStmt, NULL);
+	sqlite3_bind_text(pStmt, 1, Username, -1, SQLITE_TRANSIENT);
 
-	int code = sqlite3_step(stmt);
+	int code = sqlite3_step(pStmt);
 
 
-	if(code != SQLITE_ROW || sqlite3_column_count(stmt) == 0) {
+	if(code != SQLITE_ROW || sqlite3_column_count(pStmt) == 0) {
 		Print("database", "No rows returned when using COUNT(*).");
+		sqlite3_finalize(pStmt);
 		return false;
 	}
 
-	int count = sqlite3_column_int(stmt, 0);
+	int count = sqlite3_column_int(pStmt, 0);
 
-	sqlite3_finalize(stmt);
+	sqlite3_finalize(pStmt);
 	return count;
+}
+
+bool CGameControllerMOD::RegisterPlayer(const char *Username, const char *Password)
+{
+	sqlite3_stmt *pStmt;
+	sqlite3_prepare_v2(DB(),
+			"INSERT INTO Player (Username, Password) VALUES (?,?);",
+			-1, &pStmt, NULL);
+
+	sqlite3_bind_text(pStmt, 1, Username, -1, SQLITE_TRANSIENT);
+	sqlite3_bind_text(pStmt, 2, Password, -1, SQLITE_TRANSIENT);
+
+	int code = sqlite3_step(pStmt);
+	sqlite3_finalize(pStmt);
+
+	if(code != SQLITE_DONE)
+	{
+		dbg_msg("database", "Error inserting new player");
+		return false;
+	}
+
+	return true;
 }

@@ -10,6 +10,7 @@
 #include "character.h"
 #include "laser.h"
 #include "projectile.h"
+#include "life_indicator.h"
 
 //input count
 struct CInputCount
@@ -47,6 +48,7 @@ CCharacter::CCharacter(CGameWorld *pWorld)
 	m_Health = 0;
 	m_Armor = 0;
 	m_TriggeredEvents = 0;
+	m_MaxLife = 5;
 }
 
 void CCharacter::Reset()
@@ -77,6 +79,8 @@ bool CCharacter::Spawn(CPlayer *pPlayer, vec2 Pos)
 
 	GameWorld()->InsertEntity(this);
 	m_Alive = true;
+
+	m_LifeIndicator = new CLifeIndicator(GameWorld(), GetPlayer()->GetCID(), m_MaxLife);
 
 	GameServer()->m_pController->OnCharacterSpawn(this);
 
