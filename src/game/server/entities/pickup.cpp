@@ -109,10 +109,7 @@ void CPickup::Tick()
 			case PICKUP_NINJA:
 				{
 					Picked = true;
-					if(pChr->m_SuperHammer == 0)
-					{
-						pChr->m_SuperHammer = g_Config.m_SvHammerSuperNumber;
-					}
+					pChr->m_SuperHammer = g_Config.m_SvHammerSuperNumber;
 					// activate ninja on target player
 					pChr->GiveNinja();
 

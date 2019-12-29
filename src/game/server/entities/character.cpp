@@ -302,6 +302,7 @@ void CCharacter::FireWeapon()
 	switch(m_ActiveWeapon)
 	{
 		case WEAPON_HAMMER:
+		case WEAPON_NINJA:
 		{
 			// reset objects Hit
 			m_NumObjectsHit = 0;
@@ -412,7 +413,7 @@ void CCharacter::FireWeapon()
 			new CLaser(GameWorld(), m_Pos, Direction, GameServer()->Tuning()->m_LaserReach, m_pPlayer->GetCID());
 			GameServer()->CreateSound(m_Pos, SOUND_LASER_FIRE);
 		} break;
-
+		/*
 		case WEAPON_NINJA:
 		{
 			// reset Hit objects
@@ -424,7 +425,7 @@ void CCharacter::FireWeapon()
 
 			GameServer()->CreateSound(m_Pos, SOUND_NINJA_FIRE);
 		} break;
-
+		*/
 	}
 
 	m_AttackTick = Server()->Tick();
