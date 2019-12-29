@@ -175,6 +175,21 @@ public:
 	void Read(const CNetObj_CharacterCore *pObjCore);
 	void Write(CNetObj_CharacterCore *pObjCore);
 	void Quantize();
+
+	// Teesmash
+	
+	// record who hammered or hooked us last
+	class LastTouch
+	{
+		int m_TouchedBy;
+		int64 m_TouchedUntil;
+	public:
+		LastTouch();
+		void By(int ClientID, int Duration);
+		int Who();
+	};
+	LastTouch m_LastHammer;
+	LastTouch m_LastHook;
 };
 
 #endif

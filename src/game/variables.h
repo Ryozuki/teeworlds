@@ -134,6 +134,22 @@ MACRO_CONFIG_INT(SvVoteKick, sv_vote_kick, 1, 0, 1, CFGFLAG_SAVE|CFGFLAG_SERVER,
 MACRO_CONFIG_INT(SvVoteKickMin, sv_vote_kick_min, 0, 0, MAX_CLIENTS, CFGFLAG_SAVE|CFGFLAG_SERVER, "Minimum number of players required to start a kick vote")
 MACRO_CONFIG_INT(SvVoteKickBantime, sv_vote_kick_bantime, 5, 0, 1440, CFGFLAG_SAVE|CFGFLAG_SERVER, "The time to ban a player if kicked by vote. 0 makes it just use kick")
 
+// Teesmash
+MACRO_CONFIG_INT(SvHammerStartStrength, sv_hammer_start_strength, 300, 0, 100000, CFGFLAG_SERVER, "The hammer strength before being hit")
+MACRO_CONFIG_INT(SvHammerHitStrength, sv_hammer_hit_strength, 60, 0, 100000, CFGFLAG_SERVER, "How much the hammer strength increases which each hit")
+
+MACRO_CONFIG_INT(SvScoreTimeHammer, sv_score_time_hammer, 10, 0, 1000, CFGFLAG_SERVER, "For how many seconds after hammering a player you score for his death")
+MACRO_CONFIG_INT(SvScoreTimeHook, sv_score_time_hook, 10, 0, 1000, CFGFLAG_SERVER, "For how many seconds after hooking a player you score for his death")
+
+MACRO_CONFIG_INT(SvHammerSuper, sv_hammer_super, 1, 0, 1, CFGFLAG_SERVER, "Wether the super hammer powerup (ninja) spawns")
+MACRO_CONFIG_INT(SvHammerSuperSpawnTime, sv_hammer_super_spawn_time, 90, 0, 1000, CFGFLAG_SERVER, "How many seconds it takes for the super hammer powerup (ninja) to spawn")
+MACRO_CONFIG_INT(SvHammerSuperStrength, sv_hammer_super_strength, 500, 0, 100000, CFGFLAG_SERVER, "By how much having super hammer increases the hammer strength")
+MACRO_CONFIG_INT(SvHammerSuperNumber, sv_hammer_super_number, 5, 0, 1000, CFGFLAG_SERVER, "How many hits the super hammer lasts (displayed as health ingame)")
+
+MACRO_CONFIG_INT(SvKillingSpree, sv_killing_spree, 1, 0, 1, CFGFLAG_SERVER, "Enable killing spree messages")
+MACRO_CONFIG_INT(SvKillingSpreeMsgKills, sv_killing_spree_msg_kills, 3, 1, 1000, CFGFLAG_SERVER, "How many kills to do between killing spree messages")
+
+
 // debug
 #ifdef CONF_DEBUG // this one can crash the server if not used correctly
 	MACRO_CONFIG_INT(DbgDummies, dbg_dummies, 0, 0, MAX_CLIENTS, CFGFLAG_SERVER, "")

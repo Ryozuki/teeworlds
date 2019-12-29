@@ -1,6 +1,7 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include <generated/server_data.h>
+#include <engine/shared/config.h>
 #include <game/server/gamecontext.h>
 #include <game/server/player.h>
 
@@ -19,8 +20,8 @@ CPickup::CPickup(CGameWorld *pGameWorld, int Type, vec2 Pos)
 
 void CPickup::Reset()
 {
-	if (g_pData->m_aPickups[m_Type].m_Spawndelay > 0)
-		m_SpawnTick = Server()->Tick() + Server()->TickSpeed() * g_pData->m_aPickups[m_Type].m_Spawndelay;
+	if(m_Type == PICKUP_NINJA)
+		m_SpawnTick = Server()->Tick() + Server()->TickSpeed() * g_Config.m_SvHammerSuperSpawnTime;
 	else
 		m_SpawnTick = -1;
 }
@@ -50,11 +51,20 @@ void CPickup::Tick()
 		switch (m_Type)
 		{
 			case PICKUP_HEALTH:
+				// Teesmash
+				if(pChr->m_KnockbackStrength >= 1)
+				{
+					pChr->m_KnockbackStrength -= 1;
+					GameServer()->CreateSound(m_Pos, SOUND_PICKUP_HEALTH);
+					GameServer()->CreateSound(m_Pos, SOUND_PICKUP_HEALTH);
+				}
+				/*
 				if(pChr->IncreaseHealth(1))
 				{
 					Picked = true;
 					GameServer()->CreateSound(m_Pos, SOUND_PICKUP_HEALTH);
 				}
+				*/
 				break;
 
 			case PICKUP_ARMOR:
@@ -96,9 +106,14 @@ void CPickup::Tick()
 			case PICKUP_NINJA:
 				{
 					Picked = true;
+					if(pChr->m_SuperHammer == 0)
+					{
+						pChr->m_SuperHammer = g_Config.m_SvHammerSuperNumber;
+					}
 					// activate ninja on target player
 					pChr->GiveNinja();
 
+					/*
 					// loop through all players, setting their emotes
 					CCharacter *pC = static_cast<CCharacter *>(GameWorld()->FindFirst(CGameWorld::ENTTYPE_CHARACTER));
 					for(; pC; pC = (CCharacter *)pC->TypeNext())
@@ -108,6 +123,7 @@ void CPickup::Tick()
 					}
 
 					pChr->SetEmote(EMOTE_ANGRY, Server()->Tick() + 1200 * Server()->TickSpeed() / 1000);
+					*/
 					break;
 				}
 
@@ -122,6 +138,8 @@ void CPickup::Tick()
 				pChr->GetPlayer()->GetCID(), Server()->ClientName(pChr->GetPlayer()->GetCID()), m_Type);
 			GameServer()->Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "game", aBuf);
 			int RespawnTime = g_pData->m_aPickups[m_Type].m_Respawntime;
+			if(m_Type == PICKUP_NINJA)
+				RespawnTime = g_Config.m_SvHammerSuperSpawnTime;
 			if(RespawnTime >= 0)
 				m_SpawnTick = Server()->Tick() + Server()->TickSpeed() * RespawnTime;
 		}

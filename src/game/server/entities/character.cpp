@@ -59,12 +59,15 @@ bool CCharacter::Spawn(CPlayer *pPlayer, vec2 Pos)
 	m_EmoteStop = -1;
 	m_LastAction = -1;
 	m_LastNoAmmoSound = -1;
-	m_ActiveWeapon = WEAPON_GUN;
+	m_ActiveWeapon = WEAPON_HAMMER;
 	m_LastWeapon = WEAPON_HAMMER;
 	m_QueuedWeapon = -1;
 
 	m_pPlayer = pPlayer;
 	m_Pos = Pos;
+
+	m_KnockbackStrength = 0;
+	m_SuperHammer = 0;
 
 	m_Core.Reset();
 	m_Core.Init(&GameWorld()->m_Core, GameServer()->Collision());
@@ -134,7 +137,8 @@ void CCharacter::HandleNinja()
 	}
 
 	// force ninja Weapon
-	SetWeapon(WEAPON_NINJA);
+	// Teesmash
+	//SetWeapon(WEAPON_NINJA);
 
 	m_Ninja.m_CurrentMoveTime--;
 
@@ -327,8 +331,27 @@ void CCharacter::FireWeapon()
 				else
 					Dir = vec2(0.f, -1.f);
 
-				pTarget->TakeDamage(vec2(0.f, -1.f) + normalize(Dir + vec2(0.f, -1.1f)) * 10.0f, Dir*-1, g_pData->m_Weapons.m_Hammer.m_pBase->m_Damage,
+				
+				// Teesmash
+				float FinalHammerStrength = g_Config.m_SvHammerStartStrength/10.f + pTarget->m_KnockbackStrength * g_Config.m_SvHammerHitStrength/10.f;
+				if(m_SuperHammer > 0)
+				{
+					FinalHammerStrength += g_Config.m_SvHammerSuperStrength/10.f;
+					m_SuperHammer -= 1;
+				}
+
+				pTarget->TakeDamage(vec2(0.f, -1.f) + normalize(Dir + vec2(0.f, -1.1f)) * FinalHammerStrength, Dir*-1, 0,
 					m_pPlayer->GetCID(), m_ActiveWeapon);
+
+				pTarget->m_Core.m_LastHammer.By(m_pPlayer->GetCID(), g_Config.m_SvScoreTimeHammer);
+
+				if(pTarget->m_Armor == 0)
+					pTarget->m_KnockbackStrength += 1;
+				else
+					pTarget->m_Armor -= 1;
+
+				GameServer()->SendSkinChange(pTarget->m_pPlayer->GetCID(), -1);
+
 				Hits++;
 			}
 
@@ -657,6 +680,11 @@ bool CCharacter::IncreaseArmor(int Amount)
 
 void CCharacter::Die(int Killer, int Weapon)
 {
+	if(m_Core.m_LastHammer.Who() != -1)
+	{
+		Killer = m_Core.m_LastHammer.Who();
+	}
+
 	// we got to wait 0.5 secs before respawning
 	m_Alive = false;
 	m_pPlayer->m_RespawnTick = Server()->Tick()+Server()->TickSpeed()/2;
@@ -699,6 +727,33 @@ void CCharacter::Die(int Killer, int Weapon)
 
 	// a nice sound
 	GameServer()->CreateSound(m_Pos, SOUND_PLAYER_DIE);
+
+	// Teesmash
+	if(g_Config.m_SvKillingSpree)
+	{
+		if(OnSpree())
+			GameServer()->CreateSound(m_Pos, SOUND_GRENADE_EXPLODE);
+
+		if(m_pPlayer->GetCID() != Killer && GameServer()->m_apPlayers[Killer] && GameServer()->m_apPlayers[Killer]->GetCharacter())
+		{
+			GameServer()->m_apPlayers[Killer]->GetCharacter()->SpreeAdd();
+		}
+
+		SpreeEnd(Killer);
+	}
+
+	// Set killer emote happy
+	if(Killer != m_pPlayer->GetCID() && GameServer()->m_apPlayers[Killer])
+	{
+		CCharacter *pChr = GameServer()->m_apPlayers[Killer]->GetCharacter();
+
+		if(pChr)
+		{
+			pChr->m_EmoteType = EMOTE_HAPPY;
+			pChr->m_EmoteStop = Server()->Tick() + Server()->TickSpeed();
+		}
+	}
+	// Teesmash end
 
 	// this is for auto respawn after 3 secs
 	m_pPlayer->m_DieTick = Server()->Tick();
@@ -844,10 +899,15 @@ void CCharacter::Snap(int SnappingClient)
 
 	pCharacter->m_Direction = m_Input.m_Direction;
 
+	// Teesmash
+	if(m_SuperHammer < 0)
+		pCharacter->m_Weapon = WEAPON_NINJA;
+	// Teesmash end
+
 	if(m_pPlayer->GetCID() == SnappingClient || SnappingClient == -1 ||
 		(!g_Config.m_SvStrictSpectateMode && m_pPlayer->GetCID() == GameServer()->m_apPlayers[SnappingClient]->GetSpectatorID()))
 	{
-		pCharacter->m_Health = m_Health;
+		pCharacter->m_Health = m_SuperHammer;
 		pCharacter->m_Armor = m_Armor;
 		if(m_ActiveWeapon == WEAPON_NINJA)
 			pCharacter->m_AmmoCount = m_Ninja.m_ActivationTick + g_pData->m_Weapons.m_Ninja.m_Duration * Server()->TickSpeed() / 1000;
@@ -866,3 +926,60 @@ void CCharacter::PostSnap()
 {
 	m_TriggeredEvents = 0;
 }
+bool CCharacter::OnSpree()
+{
+	if(m_Spree >= g_Config.m_SvKillingSpreeMsgKills)
+		return true;
+	return false;
+}
+
+const char *CCharacter::SpreeMessage()
+{
+	static char SpreeMsg[][32] = {
+		"a SMASHed SMASHer",
+		"on a SMASHing spree",
+		"unSMASHable",
+		"SMASHing here",
+		"in a SMASHed mood",
+		"SMASHmazing",
+		"a supercute SMASHer",
+		"born to be a SMASHer",
+		"SMASHing it like a boss",
+		"addicted to SMASH",
+		"like a SMASH god",
+		"a SMASHing legend",
+		"using a SMASH-bot",
+		"should be SMASH developer"
+	};
+	static int SpreeMsgNum = sizeof(SpreeMsg) / sizeof(SpreeMsg[0]);
+	int i = m_Spree / g_Config.m_SvKillingSpreeMsgKills - 1;
+	if(i >= SpreeMsgNum)
+		i = SpreeMsgNum - 1;
+	return SpreeMsg[i];
+}
+
+void CCharacter::SpreeAdd()
+{
+	m_Spree++;
+	if(m_Spree % g_Config.m_SvKillingSpreeMsgKills == 0)
+	{
+		char aBuf[512];
+		str_format(aBuf, sizeof(aBuf), "'%s' is %s with %d kills!", Server()->ClientName(m_pPlayer->GetCID()), SpreeMessage(), m_Spree);
+		GameServer()->SendChat(-1, CHAT_ALL, -1, aBuf);
+	}
+}
+
+void CCharacter::SpreeEnd(int killer)
+{
+	if(m_Spree >= g_Config.m_SvKillingSpreeMsgKills)
+	{
+		char aBuf[512];
+		if(killer == m_pPlayer->GetCID())
+			str_format(aBuf, sizeof(aBuf), "'%s' was %s with %d kills but died", Server()->ClientName(m_pPlayer->GetCID()), SpreeMessage(), m_Spree);
+		else
+			str_format(aBuf, sizeof(aBuf), "'%s' was %s with %d kills but was stopped by '%s'", Server()->ClientName(m_pPlayer->GetCID()), SpreeMessage(), m_Spree, Server()->ClientName(killer));
+		GameServer()->SendChat(-1, CHAT_ALL, -1, aBuf);
+	}
+	m_Spree = 0;
+}
+

@@ -1,6 +1,7 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "gamecore.h"
+#include <engine/shared/config.h>
 
 const char *CTuningParams::m_apNames[] =
 {
@@ -243,7 +244,11 @@ void CCharacterCore::Tick(bool UseInput)
 		{
 			CCharacterCore *pCharCore = m_pWorld->m_apCharacters[m_HookedPlayer];
 			if(pCharCore)
+			{
 				m_HookPos = pCharCore->m_Pos;
+				// Teesmash
+				pCharCore->m_LastHook.By(this - *m_pWorld->m_apCharacters, g_Config.m_SvScoreTimeHook);
+			}
 			else
 			{
 				// release hook
@@ -436,3 +441,21 @@ void CCharacterCore::Quantize()
 	Read(&Core);
 }
 
+CCharacterCore::LastTouch::LastTouch()
+{
+	m_TouchedBy = -1;
+	m_TouchedUntil = 0;
+}
+
+void CCharacterCore::LastTouch::By(int ClientID, int Duration)
+{
+	m_TouchedBy = ClientID;
+	m_TouchedUntil = time_get() + time_freq()*Duration;
+}
+
+int CCharacterCore::LastTouch::Who()
+{
+	if(time_get() < m_TouchedUntil)
+		return m_TouchedBy;
+	return -1;
+}

@@ -290,6 +290,13 @@ void CGameContext::SendSkinChange(int ClientID, int TargetID)
 		Msg.m_aUseCustomColors[p] = m_apPlayers[ClientID]->m_TeeInfos.m_aUseCustomColors[p];
 		Msg.m_aSkinPartColors[p] = m_apPlayers[ClientID]->m_TeeInfos.m_aSkinPartColors[p];
 	}
+
+	CCharacter *pChr = m_apPlayers[ClientID]->GetCharacter();
+
+	int KnockbackStrength = pChr ? pChr->m_KnockbackStrength : 0;
+	int SkinHue = min(64 + KnockbackStrength * 10, 255) << 16;
+	Msg.m_aSkinPartColors[SKINPART_EYES] = SkinHue;
+
 	Server()->SendPackMsg(&Msg, MSGFLAG_VITAL|MSGFLAG_NORECORD, TargetID);
 }
 
@@ -667,6 +674,8 @@ void CGameContext::OnClientEnter(int ClientID)
 		Msg.m_Team = NewClientInfoMsg.m_Team;
 		Server()->SendPackMsg(&Msg, MSGFLAG_NOSEND, -1);
 	}
+
+	SendBroadcast("Hammer others into spikes or off the platform to win!", ClientID);
 }
 
 void CGameContext::OnClientConnected(int ClientID, bool Dummy, bool AsSpec)
@@ -997,14 +1006,19 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 
 			SendEmoticon(ClientID, pMsg->m_Emoticon);
 		}
+		// Teesmash, prevent self kill
+		
 		else if (MsgID == NETMSGTYPE_CL_KILL && !m_World.m_Paused)
 		{
 			if(pPlayer->m_LastKill && pPlayer->m_LastKill+Server()->TickSpeed()*3 > Server()->Tick())
 				return;
+			
+			SendChat(-1, CHAT_ALL, ClientID, "You can't commit suicide!");
 
-			pPlayer->m_LastKill = Server()->Tick();
-			pPlayer->KillCharacter(WEAPON_SELF);
+			// pPlayer->m_LastKill = Server()->Tick();
+			// pPlayer->KillCharacter(WEAPON_SELF);
 		}
+		
 		else if (MsgID == NETMSGTYPE_CL_READYCHANGE)
 		{
 			if(pPlayer->m_LastReadyChange && pPlayer->m_LastReadyChange+Server()->TickSpeed()*1 > Server()->Tick())
@@ -1499,18 +1513,7 @@ void CGameContext::OnInit()
 	m_Collision.Init(&m_Layers);
 
 	// select gametype
-	if(str_comp_nocase(g_Config.m_SvGametype, "mod") == 0)
-		m_pController = new CGameControllerMOD(this);
-	else if(str_comp_nocase(g_Config.m_SvGametype, "ctf") == 0)
-		m_pController = new CGameControllerCTF(this);
-	else if(str_comp_nocase(g_Config.m_SvGametype, "lms") == 0)
-		m_pController = new CGameControllerLMS(this);
-	else if(str_comp_nocase(g_Config.m_SvGametype, "lts") == 0)
-		m_pController = new CGameControllerLTS(this);
-	else if(str_comp_nocase(g_Config.m_SvGametype, "tdm") == 0)
-		m_pController = new CGameControllerTDM(this);
-	else
-		m_pController = new CGameControllerDM(this);
+	m_pController = new CGameControllerMOD(this);
 
 	// create all entities from the game layer
 	CMapItemLayerTilemap *pTileMap = m_Layers.GameLayer();

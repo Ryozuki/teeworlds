@@ -285,7 +285,7 @@ bool IGameController::OnEntity(int Index, vec2 Pos)
 	case ENTITY_HEALTH_1:
 		Type = PICKUP_HEALTH;
 		break;
-	case ENTITY_WEAPON_SHOTGUN:
+	/*case ENTITY_WEAPON_SHOTGUN:
 		Type = PICKUP_SHOTGUN;
 		break;
 	case ENTITY_WEAPON_GRENADE:
@@ -294,8 +294,9 @@ bool IGameController::OnEntity(int Index, vec2 Pos)
 	case ENTITY_WEAPON_LASER:
 		Type = PICKUP_LASER;
 		break;
+	*/
 	case ENTITY_POWERUP_NINJA:
-		if(g_Config.m_SvPowerups)
+		if(g_Config.m_SvHammerSuper)
 			Type = PICKUP_NINJA;
 	}
 

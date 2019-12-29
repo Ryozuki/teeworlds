@@ -63,6 +63,11 @@ public:
 	bool IsAlive() const { return m_Alive; }
 	class CPlayer *GetPlayer() { return m_pPlayer; }
 
+	// TeeSmash
+	
+	int m_KnockbackStrength;
+	int m_SuperHammer;
+
 private:
 	// player controlling this character
 	class CPlayer *m_pPlayer;
@@ -126,6 +131,15 @@ private:
 	CCharacterCore m_SendCore; // core that we should send
 	CCharacterCore m_ReckoningCore; // the dead reckoning core
 
+	// TeeSmash
+
+
+	// spree messages
+	int m_Spree;
+	void SpreeAdd();
+	void SpreeEnd(int Killer);
+	bool OnSpree();
+	const char *SpreeMessage();
 };
 
 #endif

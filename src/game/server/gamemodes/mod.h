@@ -10,7 +10,5 @@ class CGameControllerMOD : public IGameController
 {
 public:
 	CGameControllerMOD(class CGameContext *pGameServer);
-	virtual void Tick();
-	// add more virtual functions here if you wish
 };
 #endif
