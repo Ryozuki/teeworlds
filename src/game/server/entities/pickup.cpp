@@ -20,10 +20,13 @@ CPickup::CPickup(CGameWorld *pGameWorld, int Type, vec2 Pos)
 
 void CPickup::Reset()
 {
-	if(m_Type == PICKUP_NINJA)
-		m_SpawnTick = Server()->Tick() + Server()->TickSpeed() * g_Config.m_SvHammerSuperSpawnTime;
+	if (g_pData->m_aPickups[m_Type].m_Spawndelay > 0)
+		m_SpawnTick = Server()->Tick() + Server()->TickSpeed() * g_pData->m_aPickups[m_Type].m_Spawndelay;
 	else
 		m_SpawnTick = -1;
+
+	if(m_Type == PICKUP_NINJA)
+		m_SpawnTick = Server()->Tick() + Server()->TickSpeed() * g_Config.m_SvHammerSuperSpawnTime;
 }
 
 void CPickup::Tick()

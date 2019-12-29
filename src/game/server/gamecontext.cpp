@@ -291,13 +291,20 @@ void CGameContext::SendSkinChange(int ClientID, int TargetID)
 		Msg.m_aSkinPartColors[p] = m_apPlayers[ClientID]->m_TeeInfos.m_aSkinPartColors[p];
 	}
 
+	Msg.m_aUseCustomColors[SKINPART_BODY] = true;
+	Msg.m_aSkinPartColors[SKINPART_BODY] = CalculateSkinColor(ClientID);
+
+	Server()->SendPackMsg(&Msg, MSGFLAG_VITAL|MSGFLAG_NORECORD, TargetID);
+}
+
+int CGameContext::CalculateSkinColor(int ClientID)
+{
 	CCharacter *pChr = m_apPlayers[ClientID]->GetCharacter();
 
 	int KnockbackStrength = pChr ? pChr->m_KnockbackStrength : 0;
 	int SkinHue = min(64 + KnockbackStrength * 10, 255) << 16;
-	Msg.m_aSkinPartColors[SKINPART_EYES] = SkinHue;
 
-	Server()->SendPackMsg(&Msg, MSGFLAG_VITAL|MSGFLAG_NORECORD, TargetID);
+	return SkinHue | 255 << 8;
 }
 
 void CGameContext::SendGameMsg(int GameMsgID, int ClientID)
@@ -634,6 +641,9 @@ void CGameContext::OnClientEnter(int ClientID)
 		NewClientInfoMsg.m_aSkinPartColors[p] = m_apPlayers[ClientID]->m_TeeInfos.m_aSkinPartColors[p];
 	}
 
+	NewClientInfoMsg.m_aUseCustomColors[SKINPART_BODY] = true;
+	NewClientInfoMsg.m_aSkinPartColors[SKINPART_BODY] = CalculateSkinColor(ClientID);
+
 
 	for(int i = 0; i < MAX_CLIENTS; ++i)
 	{
@@ -659,6 +669,10 @@ void CGameContext::OnClientEnter(int ClientID)
 			ClientInfoMsg.m_aUseCustomColors[p] = m_apPlayers[i]->m_TeeInfos.m_aUseCustomColors[p];
 			ClientInfoMsg.m_aSkinPartColors[p] = m_apPlayers[i]->m_TeeInfos.m_aSkinPartColors[p];
 		}
+
+		ClientInfoMsg.m_aUseCustomColors[SKINPART_BODY] = true;
+		ClientInfoMsg.m_aSkinPartColors[SKINPART_BODY] = CalculateSkinColor(ClientID);
+
 		Server()->SendPackMsg(&ClientInfoMsg, MSGFLAG_VITAL|MSGFLAG_NORECORD, ClientID);
 	}
 
