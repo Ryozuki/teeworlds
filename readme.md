@@ -1,9 +1,11 @@
-<a href="https://repology.org/metapackage/teeworlds/versions">
-    <img src="https://repology.org/badge/vertical-allrepos/teeworlds.svg" alt="Packaging status" align="right">
-</a>
+## TeeSmash
 
-Teeworlds [![CircleCI](https://circleci.com/gh/teeworlds/teeworlds.svg?style=svg)](https://circleci.com/gh/teeworlds/teeworlds) [![Travis CI Build Status](https://travis-ci.org/teeworlds/teeworlds.svg?branch=master)](https://travis-ci.org/teeworlds/teeworlds) [![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/teeworlds/teeworlds?branch=master&svg=true)](https://ci.appveyor.com/project/heinrich5991/teeworlds)
-=========
+Whoever modifies the TeeSmash code, is required to make his changes to the source code available to others, when distributing modified versions of TeeSmash. Also "Ryozuki" and "timakro" both need to be mentioned in the credits if you use any code of the modification.
+
+
+## How it Works The goal of this gamemode is to hammer others on the spikes or out of the map. When you hammer a tee, the knockback strength against that tee increases (the strength is indicated with the skin color).
+
+The hearts decrease your knockback and the shields protect you against adding knockback from 1 hit.
 
 A retro multiplayer shooter
 ---------------------------
