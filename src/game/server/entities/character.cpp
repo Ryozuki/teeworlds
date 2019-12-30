@@ -306,7 +306,10 @@ void CCharacter::FireWeapon()
 		{
 			// reset objects Hit
 			m_NumObjectsHit = 0;
-			GameServer()->CreateSound(m_Pos, SOUND_HAMMER_FIRE);
+			if(m_ActiveWeapon == WEAPON_NINJA)
+				GameServer()->CreateSound(m_Pos, SOUND_NINJA_FIRE);
+			else
+				GameServer()->CreateSound(m_Pos, SOUND_HAMMER_FIRE);
 
 			CCharacter *apEnts[MAX_CLIENTS];
 			int Hits = 0;
