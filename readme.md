@@ -9,6 +9,9 @@ The goal of this gamemode is to hammer others on the spikes or out of the map. W
 
 The hearts decrease your knockback and the shields protect you against adding knockback from 1 hit.
 
+Teeworlds ![GitHub Actions](https://github.com/teeworlds/teeworlds/workflows/Build/badge.svg)
+=========
+
 A retro multiplayer shooter
 ---------------------------
 

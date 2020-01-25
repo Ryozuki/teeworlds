@@ -89,7 +89,7 @@ void CChat::OnMapLoad()
 			// display map rotation marker in chat
 			char aBuf[256];
 			str_format(aBuf, sizeof(aBuf), Localize("Map changed to '%s'"), Client()->GetCurrentMapName());
-			AddLine(CLIENT_MSG, CHAT_ALL, aBuf);
+			AddLine(aBuf, CLIENT_MSG, CHAT_ALL);
 		}
 	}
 }
@@ -120,6 +120,11 @@ void CChat::ConSay(IConsole::IResult *pResult, void *pUserData)
 void CChat::ConSayTeam(IConsole::IResult *pResult, void *pUserData)
 {
 	((CChat*)pUserData)->Say(CHAT_TEAM, pResult->GetString(0));
+}
+
+void CChat::ConSaySelf(IConsole::IResult *pResult, void *pUserData)
+{
+	((CChat*)pUserData)->AddLine(pResult->GetString(0), CLIENT_MSG);
 }
 
 void CChat::ConWhisper(IConsole::IResult *pResult, void *pUserData)
@@ -192,6 +197,7 @@ void CChat::OnConsoleInit()
 {
 	Console()->Register("say", "r", CFGFLAG_CLIENT, ConSay, this, "Say in chat");
 	Console()->Register("say_team", "r", CFGFLAG_CLIENT, ConSayTeam, this, "Say in team chat");
+	Console()->Register("say_self", "r", CFGFLAG_CLIENT, ConSaySelf, this, "Say message just for yourself");
 	Console()->Register("whisper", "ir", CFGFLAG_CLIENT, ConWhisper, this, "Whisper to a client in chat");
 	Console()->Register("chat", "s?i", CFGFLAG_CLIENT, ConChat, this, "Enable chat with all/team/whisper mode");
 	Console()->Register("+show_chat", "", CFGFLAG_CLIENT, ConShowChat, this, "Show chat");
@@ -242,7 +248,7 @@ bool CChat::OnInput(IInput::CEvent Event)
 	}
 	else if(Event.m_Flags&IInput::FLAG_PRESS && (Event.m_Key == KEY_RETURN || Event.m_Key == KEY_KP_ENTER))
 	{
-		if(IsTypingCommand() && ExecuteCommand())
+		if(IsTypingCommand() && ExecuteCommand(true))
 		{
 			// everything is handled within
 		}
@@ -277,7 +283,11 @@ bool CChat::OnInput(IInput::CEvent Event)
 	}
 	if(Event.m_Flags&IInput::FLAG_PRESS && Event.m_Key == KEY_TAB)
 	{
-		if (m_Mode == CHAT_WHISPER)
+		if(IsTypingCommand() && ExecuteCommand(false))
+		{
+			// everything is handled within
+		}
+		else if (m_Mode == CHAT_WHISPER)
 		{
 			// change target
 			for(int i = 0; i < MAX_CLIENTS; i++)
@@ -498,7 +508,7 @@ void CChat::OnMessage(int MsgType, void *pRawMsg)
 	if(MsgType == NETMSGTYPE_SV_CHAT)
 	{
 		CNetMsg_Sv_Chat *pMsg = (CNetMsg_Sv_Chat *)pRawMsg;
-		AddLine(pMsg->m_ClientID, pMsg->m_Mode, pMsg->m_pMessage, pMsg->m_TargetID);
+		AddLine(pMsg->m_pMessage, pMsg->m_ClientID, pMsg->m_Mode, pMsg->m_TargetID);
 	}
 	else if(MsgType == NETMSGTYPE_SV_COMMANDINFO)
 	{
@@ -523,13 +533,14 @@ void CChat::OnMessage(int MsgType, void *pRawMsg)
 	}
 }
 
-void CChat::AddLine(int ClientID, int Mode, const char *pLine, int TargetID)
+void CChat::AddLine(const char *pLine, int ClientID, int Mode, int TargetID)
 {
 	if(*pLine == 0 || (ClientID >= 0 && (!g_Config.m_ClShowsocial || !m_pClient->m_aClients[ClientID].m_Active || // unknown client
 		m_pClient->m_aClients[ClientID].m_ChatIgnore ||
 		g_Config.m_ClFilterchat == 2 ||
 		(m_pClient->m_LocalClientID != ClientID && g_Config.m_ClFilterchat == 1 && !m_pClient->m_aClients[ClientID].m_Friend))))
 		return;
+
 	if(Mode == CHAT_WHISPER)
 	{
 		// unknown client
@@ -692,16 +703,15 @@ void CChat::AddLine(int ClientID, int Mode, const char *pLine, int TargetID)
 	}
 }
 
-const char* CChat::GetCommandName(int Mode)
+const char* CChat::GetCommandName(int Mode) const
 {
 	switch(Mode)
 	{
 		case CHAT_ALL: return "chat all";
 		case CHAT_WHISPER: return "chat whisper";
 		case CHAT_TEAM: return "chat team";
-		default: break;
+		default: return "";
 	}
-	return "";
 }
 
 void CChat::OnRender()
@@ -904,13 +914,20 @@ void CChat::OnRender()
 			CTextCursor InfoCursor;
 			TextRender()->SetCursor(&InfoCursor, 2.0f, y+12.0f, CategoryFontSize*0.75, TEXTFLAG_RENDER);
 
-			//find keyname and format text
-			char aKeyName[64];
-			m_pClient->m_pBinds->GetKey(GetCommandName(m_ChatBufferMode), aKeyName, sizeof(aKeyName));
+			//Check if key exists with bind
+			int KeyID, Modifier;
+			m_pClient->m_pBinds->GetKeyID(GetCommandName(m_ChatBufferMode), KeyID, Modifier);
+			
+			if(KeyID < KEY_LAST)
+			{
+				//find keyname and format text
+				char aKeyName[64];
+				m_pClient->m_pBinds->GetKey(GetCommandName(m_ChatBufferMode), aKeyName, sizeof(aKeyName), KeyID, Modifier);
 
-			char aInfoText[128];
-			str_format(aInfoText, sizeof(aInfoText), Localize("Press %s to resume chatting"), aKeyName);
-			TextRender()->TextEx(&InfoCursor, aInfoText, -1);
+				char aInfoText[128];
+				str_format(aInfoText, sizeof(aInfoText), Localize("Press %s to resume chatting"), aKeyName);
+				TextRender()->TextEx(&InfoCursor, aInfoText, -1);
+			}
 		}
 		else
 		{
@@ -922,6 +939,15 @@ void CChat::OnRender()
 
 			TextRender()->TextEx(&Marker, "|", -1);
 			TextRender()->TextEx(&Cursor, m_Input.GetString()+m_Input.GetCursorOffset(), -1);
+
+			//Render command autocomplete option hint
+			if(IsTypingCommand() && m_Commands.CountActiveCommands())
+				if(const CChat::CChatCommand* pCommand = m_Commands.GetSelectedCommand())
+					if(str_length(pCommand->m_aName)+1 > str_length(m_Input.GetString()))
+					{
+						TextRender()->TextColor(1.0f, 1.0f, 1.0f, 0.5f);
+						TextRender()->TextEx(&Cursor, pCommand->m_aName + str_length(m_Input.GetString())-1, -1);
+					}
 
 			if(ChatMode == CHAT_WHISPER)
 			{
@@ -1303,7 +1329,10 @@ void CChat::HandleCommands(float x, float y, float w)
 				CTextCursor Cursor;
 				TextRender()->SetCursor(&Cursor, Rect.x + 5.0f, y, 5.0f, TEXTFLAG_RENDER);
 				TextRender()->TextColor(0.5f, 0.5f, 0.5f, 1.0f);
-				TextRender()->TextEx(&Cursor, Localize("Press Enter to confirm or Esc to cancel"), -1);
+				if(m_Commands.GetSelectedCommand() && str_startswith(m_Input.GetString() + 1, m_Commands.GetSelectedCommand()->m_aName))
+					TextRender()->TextEx(&Cursor, Localize("Press Enter to confirm or Esc to cancel"), -1);
+				else
+					TextRender()->TextEx(&Cursor, Localize("Press Tab to select or Esc to cancel"), -1);
 			}
 
 			// render commands
@@ -1361,7 +1390,7 @@ void CChat::HandleCommands(float x, float y, float w)
 	}
 }
 
-bool CChat::ExecuteCommand()
+bool CChat::ExecuteCommand(bool Execute)
 {
 	if(m_Commands.CountActiveCommands() == 0)
 		return false;
@@ -1371,7 +1400,7 @@ bool CChat::ExecuteCommand()
 	dbg_assert(pCommand != 0, "selected command does not exist");
 	bool IsFullMatch = str_find(pCommandStr + 1, pCommand->m_aName); // if the command text is fully inside pCommandStr (aka, not a shortcut)
 
-	if(IsFullMatch)
+	if(IsFullMatch && Execute)
 	{
 		// execute command
 		if(pCommand->m_pfnCallback)
@@ -1384,9 +1413,11 @@ bool CChat::ExecuteCommand()
 			Msg.m_Arguments = pCommandStr;
 			Client()->SendPackMsg(&Msg, MSGFLAG_VITAL);
 			m_Mode = CHAT_NONE;
+			m_pClient->OnRelease();
 		}
+		return true;
 	}
-	else
+	else if(!IsFullMatch && !Execute)
 	{
 		// autocomplete command
 		char aBuf[128];
@@ -1397,8 +1428,9 @@ bool CChat::ExecuteCommand()
 		m_Input.Set(aBuf);
 		m_Input.SetCursorOffset(str_length(aBuf));
 		m_InputUpdate = true;
+		return true;
 	}
-	return true;
+	return false;
 }
 
 // returns -1 if not found or duplicate
@@ -1505,9 +1537,10 @@ void CChat::Com_Mute(CChat *pChatData, const char* pCommand)
 
 		char aMsg[128];
 		str_format(aMsg, sizeof(aMsg), !isMuted ? Localize("'%s' was muted") : Localize("'%s' was unmuted"), pChatData->m_pClient->m_aClients[TargetID].m_aName);
-		pChatData->AddLine(CLIENT_MSG, CHAT_ALL, aMsg, -1);
+		pChatData->AddLine(aMsg, CLIENT_MSG, CHAT_ALL);
 	}
 	pChatData->m_Mode = CHAT_NONE;
+	pChatData->m_pClient->OnRelease();
 }
 
 void CChat::Com_Befriend(CChat *pChatData, const char* pCommand)
@@ -1526,9 +1559,10 @@ void CChat::Com_Befriend(CChat *pChatData, const char* pCommand)
 
 		char aMsg[128];
 		str_format(aMsg, sizeof(aMsg), !isFriend ? Localize("'%s' was added as a friend") : Localize("'%s' was removed as a friend"), pChatData->m_pClient->m_aClients[TargetID].m_aName);
-		pChatData->AddLine(CLIENT_MSG, CHAT_ALL, aMsg, -1);
+		pChatData->AddLine(aMsg, CLIENT_MSG, CHAT_ALL);
 	}
 	pChatData->m_Mode = CHAT_NONE;
+	pChatData->m_pClient->OnRelease();
 }
 
 
