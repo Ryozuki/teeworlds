@@ -8,6 +8,7 @@
 
 #include <math.h>
 #include "collision.h"
+#include "engine/config.h"
 #include <engine/shared/protocol.h>
 #include <generated/protocol.h>
 
@@ -147,6 +148,7 @@ class CCharacterCore
 	CWorldCore *m_pWorld;
 	CCollision *m_pCollision;
 public:
+	static const float PHYS_SIZE;
 	vec2 m_Pos;
 	vec2 m_Vel;
 
@@ -169,7 +171,7 @@ public:
 
 	void Init(CWorldCore *pWorld, CCollision *pCollision);
 	void Reset();
-	void Tick(bool UseInput);
+	void Tick(bool UseInput, CConfig *Config);
 	void Move();
 
 	void Read(const CNetObj_CharacterCore *pObjCore);

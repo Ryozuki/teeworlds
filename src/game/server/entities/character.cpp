@@ -292,7 +292,7 @@ void CCharacter::FireWeapon()
 
 	vec2 ProjStartPos = m_Pos+Direction*GetProximityRadius()*0.75f;
 
-	if(g_Config.m_Debug)
+	if(Config()->m_Debug)
 	{
 		char aBuf[256];
 		str_format(aBuf, sizeof(aBuf), "shot player='%d:%s' team=%d weapon=%d", m_pPlayer->GetCID(), Server()->ClientName(m_pPlayer->GetCID()), m_pPlayer->GetTeam(), m_ActiveWeapon);
@@ -337,17 +337,17 @@ void CCharacter::FireWeapon()
 
 				
 				// Teesmash
-				float FinalHammerStrength = g_Config.m_SvHammerStartStrength/10.f + pTarget->m_KnockbackStrength * g_Config.m_SvHammerHitStrength/10.f;
+				float FinalHammerStrength = Config()->m_SvHammerStartStrength/10.f + pTarget->m_KnockbackStrength * Config()->m_SvHammerHitStrength/10.f;
 				if(m_SuperHammer > 0)
 				{
-					FinalHammerStrength += g_Config.m_SvHammerSuperStrength/10.f;
+					FinalHammerStrength += Config()->m_SvHammerSuperStrength/10.f;
 					m_SuperHammer -= 1;
 				}
 
 				pTarget->TakeDamage(vec2(0.f, -1.f) + normalize(Dir + vec2(0.f, -1.1f)) * FinalHammerStrength, Dir*-1, 0,
 					m_pPlayer->GetCID(), m_ActiveWeapon);
 
-				pTarget->m_Core.m_LastHammer.By(m_pPlayer->GetCID(), g_Config.m_SvScoreTimeHammer);
+				pTarget->m_Core.m_LastHammer.By(m_pPlayer->GetCID(), Config()->m_SvScoreTimeHammer);
 
 				if(pTarget->m_Armor == 0)
 					pTarget->m_KnockbackStrength += 1;
@@ -560,7 +560,7 @@ void CCharacter::ResetInput()
 void CCharacter::Tick()
 {
 	m_Core.m_Input = m_Input;
-	m_Core.Tick(true);
+	m_Core.Tick(true, Config());
 
 	// handle leaving gamelayer
 	if(GameLayerClipped(m_Pos))
@@ -574,11 +574,12 @@ void CCharacter::Tick()
 
 void CCharacter::TickDefered()
 {
+	static const vec2 ColBox(CCharacterCore::PHYS_SIZE, CCharacterCore::PHYS_SIZE);
 	// advance the dummy
 	{
 		CWorldCore TempWorld;
 		m_ReckoningCore.Init(&TempWorld, GameServer()->Collision());
-		m_ReckoningCore.Tick(false);
+		m_ReckoningCore.Tick(false, Config());
 		m_ReckoningCore.Move();
 		m_ReckoningCore.Quantize();
 	}
@@ -586,13 +587,13 @@ void CCharacter::TickDefered()
 	//lastsentcore
 	vec2 StartPos = m_Core.m_Pos;
 	vec2 StartVel = m_Core.m_Vel;
-	bool StuckBefore = GameServer()->Collision()->TestBox(m_Core.m_Pos, vec2(28.0f, 28.0f));
+	bool StuckBefore = GameServer()->Collision()->TestBox(m_Core.m_Pos, ColBox);
 
 	m_Core.Move();
 
-	bool StuckAfterMove = GameServer()->Collision()->TestBox(m_Core.m_Pos, vec2(28.0f, 28.0f));
+	bool StuckAfterMove = GameServer()->Collision()->TestBox(m_Core.m_Pos, ColBox);
 	m_Core.Quantize();
-	bool StuckAfterQuant = GameServer()->Collision()->TestBox(m_Core.m_Pos, vec2(28.0f, 28.0f));
+	bool StuckAfterQuant = GameServer()->Collision()->TestBox(m_Core.m_Pos, ColBox);
 	m_Pos = m_Core.m_Pos;
 
 	if(!StuckBefore && (StuckAfterMove || StuckAfterQuant))
@@ -711,7 +712,7 @@ void CCharacter::Die(int Killer, int Weapon)
 	CNetMsg_Sv_KillMsg Msg;
 	Msg.m_Victim = m_pPlayer->GetCID();
 	Msg.m_ModeSpecial = ModeSpecial;
-	for(int i = 0 ; i < Server()->MaxClients(); i++)
+	for(int i = 0 ; i < MAX_CLIENTS; i++)
 	{
 		if(!Server()->ClientIngame(i))
 			continue;
@@ -733,7 +734,7 @@ void CCharacter::Die(int Killer, int Weapon)
 	GameServer()->CreateSound(m_Pos, SOUND_PLAYER_DIE);
 
 	// Teesmash
-	if(g_Config.m_SvKillingSpree)
+	if(Config()->m_SvKillingSpree)
 	{
 		if(OnSpree())
 			GameServer()->CreateSound(m_Pos, SOUND_GRENADE_EXPLODE);
@@ -842,8 +843,7 @@ bool CCharacter::TakeDamage(vec2 Force, vec2 Source, int Dmg, int From, int Weap
 			CCharacter *pChr = GameServer()->m_apPlayers[From]->GetCharacter();
 			if (pChr)
 			{
-				pChr->m_EmoteType = EMOTE_HAPPY;
-				pChr->m_EmoteStop = Server()->Tick() + Server()->TickSpeed();
+				pChr->SetEmote(EMOTE_HAPPY, Server()->Tick() + Server()->TickSpeed());
 			}
 		}
 
@@ -855,8 +855,7 @@ bool CCharacter::TakeDamage(vec2 Force, vec2 Source, int Dmg, int From, int Weap
 	else
 		GameServer()->CreateSound(m_Pos, SOUND_PLAYER_PAIN_SHORT);
 
-	m_EmoteType = EMOTE_PAIN;
-	m_EmoteStop = Server()->Tick() + 500 * Server()->TickSpeed() / 1000;
+	SetEmote(EMOTE_PAIN, Server()->Tick() + 500 * Server()->TickSpeed() / 1000);
 
 	return true;
 }
@@ -887,8 +886,7 @@ void CCharacter::Snap(int SnappingClient)
 	// set emote
 	if (m_EmoteStop < Server()->Tick())
 	{
-		m_EmoteType = EMOTE_NORMAL;
-		m_EmoteStop = -1;
+		SetEmote(EMOTE_NORMAL, -1);
 	}
 
 	pCharacter->m_Emote = m_EmoteType;
@@ -909,7 +907,7 @@ void CCharacter::Snap(int SnappingClient)
 	// Teesmash end
 
 	if(m_pPlayer->GetCID() == SnappingClient || SnappingClient == -1 ||
-		(!g_Config.m_SvStrictSpectateMode && m_pPlayer->GetCID() == GameServer()->m_apPlayers[SnappingClient]->GetSpectatorID()))
+		(!Config()->m_SvStrictSpectateMode && m_pPlayer->GetCID() == GameServer()->m_apPlayers[SnappingClient]->GetSpectatorID()))
 	{
 		pCharacter->m_Health = m_SuperHammer;
 		pCharacter->m_Armor = m_Armor;
@@ -932,7 +930,7 @@ void CCharacter::PostSnap()
 }
 bool CCharacter::OnSpree()
 {
-	if(m_Spree >= g_Config.m_SvKillingSpreeMsgKills)
+	if(m_Spree >= Config()->m_SvKillingSpreeMsgKills)
 		return true;
 	return false;
 }
@@ -956,7 +954,7 @@ const char *CCharacter::SpreeMessage()
 		"should be SMASH developer"
 	};
 	static int SpreeMsgNum = sizeof(SpreeMsg) / sizeof(SpreeMsg[0]);
-	int i = m_Spree / g_Config.m_SvKillingSpreeMsgKills - 1;
+	int i = m_Spree / Config()->m_SvKillingSpreeMsgKills - 1;
 	if(i >= SpreeMsgNum)
 		i = SpreeMsgNum - 1;
 	return SpreeMsg[i];
@@ -965,7 +963,7 @@ const char *CCharacter::SpreeMessage()
 void CCharacter::SpreeAdd()
 {
 	m_Spree++;
-	if(m_Spree % g_Config.m_SvKillingSpreeMsgKills == 0)
+	if(m_Spree % Config()->m_SvKillingSpreeMsgKills == 0)
 	{
 		char aBuf[512];
 		str_format(aBuf, sizeof(aBuf), "'%s' is %s with %d kills!", Server()->ClientName(m_pPlayer->GetCID()), SpreeMessage(), m_Spree);
@@ -975,7 +973,7 @@ void CCharacter::SpreeAdd()
 
 void CCharacter::SpreeEnd(int killer)
 {
-	if(m_Spree >= g_Config.m_SvKillingSpreeMsgKills)
+	if(m_Spree >= Config()->m_SvKillingSpreeMsgKills)
 	{
 		char aBuf[512];
 		if(killer == m_pPlayer->GetCID())

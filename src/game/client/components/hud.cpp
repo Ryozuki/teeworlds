@@ -17,6 +17,9 @@
 #include "hud.h"
 #include "voting.h"
 #include "binds.h"
+#include "motd.h"
+#include "scoreboard.h"
+#include "stats.h"
 
 CHud::CHud()
 {
@@ -31,6 +34,14 @@ void CHud::OnReset()
 {
 	m_WarmupHideTick = 0;
 	m_CheckpointTime = 0;
+}
+
+bool CHud::IsLargeWarmupTimerShown()
+{
+	return !m_pClient->m_pMotd->IsActive()
+		&& !m_pClient->m_pScoreboard->IsActive()
+		&& !m_pClient->m_pStats->IsActive()
+		&& (m_WarmupHideTick == 0 || (time_get() - m_WarmupHideTick) / time_freq() < 10); // inactivity based
 }
 
 void CHud::RenderGameTimer()
@@ -213,7 +224,7 @@ void CHud::RenderScoreHud()
 						// draw name of the flag holder
 						int ID = FlagCarrier[t]%MAX_CLIENTS;
 						char aName[64];
-						str_format(aName, sizeof(aName), "%s", g_Config.m_ClShowsocial ? m_pClient->m_aClients[ID].m_aName : "");
+						str_format(aName, sizeof(aName), "%s", Config()->m_ClShowsocial ? m_pClient->m_aClients[ID].m_aName : "");
 						float w = TextRender()->TextWidth(0, 8.0f, aName, -1, -1.0f) + RenderTools()->GetClientIdRectSize(8.0f);
 
 						CTextCursor Cursor;
@@ -312,7 +323,7 @@ void CHud::RenderScoreHud()
 					// draw name
 					int ID = aPlayerInfo[t].m_ClientID;
 					char aName[64];
-					str_format(aName, sizeof(aName), "%s", g_Config.m_ClShowsocial ? m_pClient->m_aClients[ID].m_aName : "");
+					str_format(aName, sizeof(aName), "%s", Config()->m_ClShowsocial ? m_pClient->m_aClients[ID].m_aName : "");
 					float w = TextRender()->TextWidth(0, 8.0f, aName, -1, -1.0f) + RenderTools()->GetClientIdRectSize(8.0f);
 
 					CTextCursor Cursor;
@@ -347,22 +358,22 @@ void CHud::RenderWarmupTimer()
 	if(m_pClient->m_Snap.m_pGameData->m_GameStateFlags&GAMESTATEFLAG_WARMUP)
 	{
 		char aBuf[256];
-		float FontSize = 20.0f;
-		float w = 0.0f;
 		const char *pText = Localize("Warmup");
+		const bool LargeTimer = IsLargeWarmupTimerShown();
+		const float FontSizeTitle = LargeTimer ? 20.0f : 8.0f;
+		const float FontSizeMessage = LargeTimer ? 16.0f : 6.0f;
 
-		if(m_WarmupHideTick == 0 || (time_get() - m_WarmupHideTick) / time_freq() < 10)
+		if(LargeTimer)
 		{
-			w = TextRender()->TextWidth(0, FontSize, pText, -1, -1.0f);
-			TextRender()->Text(0, 150*Graphics()->ScreenAspect() - w/2, 50, FontSize, pText, -1.0f);
+			float TextWidth = TextRender()->TextWidth(0, FontSizeTitle, pText, -1, -1.0f);
+			TextRender()->Text(0, 150*Graphics()->ScreenAspect() - TextWidth/2, 50, FontSizeTitle, pText, -1.0f);
 		}
 		else
 		{
 			TextRender()->TextColor(1, 1, 0.5f, 1);
-			TextRender()->Text(0x0, 10, 45, 8, pText, -1.0f);
+			TextRender()->Text(0, 10, 45, FontSizeTitle, pText, -1.0f);
 		}
 
-		FontSize = 16.0f;
 		if(m_pClient->m_Snap.m_pGameData->m_GameStateEndTick == 0)
 		{
 			if(m_pClient->m_Snap.m_NotReadyCount == 1)
@@ -391,14 +402,14 @@ void CHud::RenderWarmupTimer()
 				str_format(aBuf, sizeof(aBuf), "%d", round_to_int(Seconds));
 		}
 
-		if(m_WarmupHideTick == 0 || (time_get() - m_WarmupHideTick) / time_freq() < 10)
+		if(LargeTimer)
 		{
-			w = TextRender()->TextWidth(0, FontSize, aBuf, -1, -1.0f);
-			TextRender()->Text(0, 150*Graphics()->ScreenAspect() - w/2, 75, FontSize, aBuf, -1.0f);
+			float TextWidth = TextRender()->TextWidth(0, FontSizeMessage, aBuf, -1, -1.0f);
+			TextRender()->Text(0, 150*Graphics()->ScreenAspect() - TextWidth/2, 75, FontSizeMessage, aBuf, -1.0f);
 		}
 		else
 		{
-			TextRender()->Text(0x0, 10, 54, 6, aBuf, -1.0f);
+			TextRender()->Text(0, 10, 54, FontSizeMessage, aBuf, -1.0f);
 			TextRender()->TextColor(1, 1, 1, 1);
 		}
 	}
@@ -408,7 +419,7 @@ void CHud::RenderWarmupTimer()
 
 void CHud::RenderFps()
 {
-	if(g_Config.m_ClShowfps)
+	if(Config()->m_ClShowfps)
 	{
 		// calculate avg. fps
 		float FPS = 1.0f / Client()->RenderFrameTime();
@@ -432,7 +443,7 @@ void CHud::RenderConnectionWarning()
 void CHud::RenderTeambalanceWarning()
 {
 	// render prompt about team-balance
-	if(m_pClient->m_GameInfo.m_GameFlags&GAMEFLAG_TEAMS && g_Config.m_ClWarningTeambalance && m_pClient->m_ServerSettings.m_TeamBalance &&
+	if(m_pClient->m_GameInfo.m_GameFlags&GAMEFLAG_TEAMS && Config()->m_ClWarningTeambalance && m_pClient->m_ServerSettings.m_TeamBalance &&
 		absolute(m_pClient->m_GameInfo.m_aTeamSize[TEAM_RED]-m_pClient->m_GameInfo.m_aTeamSize[TEAM_BLUE]) >= NUM_TEAMS)
 	{
 		bool Flash = time_get()/(time_freq()/2)%2 == 0;
@@ -441,7 +452,7 @@ void CHud::RenderTeambalanceWarning()
 			TextRender()->TextColor(1,1,0.5f,1);
 		else
 			TextRender()->TextColor(0.7f,0.7f,0.2f,1.0f);
-		TextRender()->Text(0x0, 5, 50, 6, pText, -1.0f);
+		TextRender()->Text(0, 5, 50, 6, pText, -1.0f);
 		TextRender()->TextColor(1,1,1,1);
 	}
 }
@@ -655,7 +666,7 @@ void CHud::RenderSpectatorHud()
 	char aName[64];
 	const int SpecID = m_pClient->m_Snap.m_SpecInfo.m_SpectatorID;
 	const int SpecMode = m_pClient->m_Snap.m_SpecInfo.m_SpecMode;
-	str_format(aName, sizeof(aName), "%s", g_Config.m_ClShowsocial ? m_pClient->m_aClients[m_pClient->m_Snap.m_SpecInfo.m_SpectatorID].m_aName : "");
+	str_format(aName, sizeof(aName), "%s", Config()->m_ClShowsocial ? m_pClient->m_aClients[m_pClient->m_Snap.m_SpecInfo.m_SpectatorID].m_aName : "");
 	char aBuf[128];
 
 	CTextCursor Cursor;
@@ -809,7 +820,7 @@ void CHud::OnRender()
 	m_Height = 300.0f;
 	Graphics()->MapScreen(0.0f, 0.0f, m_Width, m_Height);
 
-	if(g_Config.m_ClShowhud)
+	if(Config()->m_ClShowhud)
 	{
 		if(m_pClient->m_Snap.m_pLocalCharacter && !(m_pClient->m_Snap.m_pGameData->m_GameStateFlags&(GAMESTATEFLAG_ROUNDOVER|GAMESTATEFLAG_GAMEOVER)))
 		{

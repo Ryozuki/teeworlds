@@ -26,7 +26,7 @@ void CPickup::Reset()
 		m_SpawnTick = -1;
 
 	if(m_Type == PICKUP_NINJA)
-		m_SpawnTick = Server()->Tick() + Server()->TickSpeed() * g_Config.m_SvHammerSuperSpawnTime;
+		m_SpawnTick = Server()->Tick() + Server()->TickSpeed() * Config()->m_SvHammerSuperSpawnTime;
 }
 
 void CPickup::Tick()
@@ -109,7 +109,7 @@ void CPickup::Tick()
 			case PICKUP_NINJA:
 				{
 					Picked = true;
-					pChr->m_SuperHammer = g_Config.m_SvHammerSuperNumber;
+					pChr->m_SuperHammer = Config()->m_SvHammerSuperNumber;
 					// activate ninja on target player
 					pChr->GiveNinja();
 
@@ -139,7 +139,7 @@ void CPickup::Tick()
 			GameServer()->Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "game", aBuf);
 			int RespawnTime = g_pData->m_aPickups[m_Type].m_Respawntime;
 			if(m_Type == PICKUP_NINJA)
-				RespawnTime = g_Config.m_SvHammerSuperSpawnTime;
+				RespawnTime = Config()->m_SvHammerSuperSpawnTime;
 			if(RespawnTime >= 0)
 				m_SpawnTick = Server()->Tick() + Server()->TickSpeed() * RespawnTime;
 		}
